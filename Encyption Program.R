@@ -6,8 +6,8 @@
 #   Key - A numeric seed that will serve as your code, accept 1- 10 numeric characters
 
 #alpha-numeric table
-num<-as.data.frame(1:30)
-let<-as.data.frame(c(as.character(letters),' ','.',"'",'!'))
+num<-as.data.frame(1:31)
+let<-as.data.frame(c(as.character(letters),' ','.',"'",'!','?'))
 rot0<-cbind(let,num)
 names(rot0)<-c('let','num')
 
@@ -22,20 +22,22 @@ converter2<-function(x){
   return(z)
 }
 
-encrypter<-function(plain.text,key){
+encrypter<-function(plain.text,key1,key2){
   
   #input
   message<-unlist(strsplit(tolower(plain.text),''))
   n<-length(message)
   message1<-as.data.frame(message,stringsAsFactors = FALSE)
   message1$message
-  
 
   #creates new list of numbers
   raw.text<-unlist(lapply((message1$message),converter))
-  set.seed(key)
-  cypher<-round(runif(n,1,100))
-  encrypted.text<-raw.text+cypher
+  set.seed(key1)
+  cypher1<-round(runif(n,1,100))
+  set.seed(key2)
+  cypher2<-round(runif(n,1,100))
+  
+  encrypted.text<-raw.text+cypher1+cypher2
   return((encrypted.text))
 }
 
@@ -44,14 +46,16 @@ encrypter<-function(plain.text,key){
 #   coded.text - Numeric list of the coded text
 #   Key - A numeric seed that will serve as your code, accept 1- 10 numeric characters
 
-decrypter<-function(coded.text,key){
+decrypter<-function(coded.text,key1,key2){
   
   message<-as.data.frame(coded.text)
   n<-nrow(message)
-  set.seed(key)
-  cypher<-as.data.frame(round(runif(n,1,100)))
-  plain.num<- message-cypher
+  set.seed(key1)
+  cypher1<-as.data.frame(round(runif(n,1,100)))
+  set.seed(key2)
+  cypher2<-as.data.frame(round(runif(n,1,100)))
   
+  plain.num<- message-cypher1-cypher2
 
   #creates new list of numbers
   plain.text<-unlist(lapply((plain.num$coded.text),converter2))
@@ -62,10 +66,10 @@ decrypter<-function(coded.text,key){
 
 
 #Example "Hello World' encryption
-coded.text<-encrypter("This is a coded message!",0123456789)
+coded.text<-encrypter("This is a coded message!",0123456789,123)
 coded.text
 
-plain.text<-decrypter(coded.text, 0123456789)
+plain.text<-decrypter(coded.text, 0123456789,12)
 plain.text
 
 
