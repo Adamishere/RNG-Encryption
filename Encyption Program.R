@@ -1,13 +1,9 @@
-#ROT_RNG
-#Substitution Cypher using a random number generator
-#Encypter:
-#Takes two arguments
-#   plain.text - which is a string text you wish to encrypt
-#   Key - A numeric seed that will serve as your code, accept 1- 10 numeric characters
+#RNG Additive Stream Cypher using a random number generator
 
+#initialize tables and functions
 #alpha-numeric table
-num<-as.data.frame(1:31)
-let<-as.data.frame(c(as.character(letters),' ','.',"'",'!','?'))
+num<-as.data.frame(1:41)
+let<-as.data.frame(c(as.character(letters),' ','.',"'",'!','?','1','2','3','4','5','6','7','8','9','0'))
 rot0<-cbind(let,num)
 names(rot0)<-c('let','num')
 
@@ -21,6 +17,12 @@ converter2<-function(x){
   z<-rot0[rot0$num==x,1]
   return(z)
 }
+
+#Encypter:
+#Takes two arguments
+#   plain.text - which is a string text you wish to encrypt
+#   Key1 - A numeric seed that will serve as your code, accepts numeric values, max 10 digits
+#   Key2 - A numeric seed that will serve as your code, accepts numeric values, max 10 digits
 
 encrypter<-function(plain.text,key1,key2){
   
@@ -44,7 +46,8 @@ encrypter<-function(plain.text,key1,key2){
 #Decypter:
 #Takes two arguments
 #   coded.text - Numeric list of the coded text
-#   Key - A numeric seed that will serve as your code, accept 1- 10 numeric characters
+#   Key1 - A numeric seed that will serve as your code, accepts numeric values, max 10 digits
+#   Key2 - A numeric seed that will serve as your code, accepts numeric values, max 10 digits
 
 decrypter<-function(coded.text,key1,key2){
   
@@ -66,12 +69,60 @@ decrypter<-function(coded.text,key1,key2){
 
 
 #Example "Hello World' encryption
-coded.text<-encrypter("This is a coded message!",0123456789,123)
+coded.text<-encrypter("This is a coded message!",0123456789,0123456789)
 coded.text
 
-plain.text<-decrypter(coded.text, 0123456789,12)
+plain.text<-decrypter(coded.text, 0123456789,0123456789)
 plain.text
 
+#Interactive encryption/decryption prompts
+#No stored vars
+interactive_prompt<-function(){
+  gate1<-readline("[E]ncrypt or [D]ecrypt?:")
+  
+  if(gate1=="E"|gate1=='e'){
+  
+    plain.text<-readline("Enter text you wish to encrypt:")
+    key1<-readline("Enter encyption key1:")
+    key2<-readline("Enter encyption key2:")
+    print(encrypter(plain.text,key1,key2))
+    
+    plain.text<-0
+    plain.text<-1
+    plain.text<-NULL
+    
+    key1<-0
+    key1<-1
+    key1<-NULL
+    
+    key2<-0
+    key2<-1
+    key2<-NULL
+  }  else if(gate1=="d"|gate1=='d'){
+    
+    coded.text0<-readline("Enter text you wish to decrypt (space delimited):")
+    coded.text<-as.numeric(unlist(strsplit(tolower(coded.text0),' ')))
+    key1<-readline("Enter encyption key1:")
+    key2<-readline("Enter encyption key2:")
+    print(decrypter(coded.text,key1,key2))
+    coded.text0<-0
+    coded.text0<-1
+    coded.text0<-NULL
+    
+    coded.text<-0
+    coded.text<-1
+    coded.text<-NULL
+    
+    key1<-0
+    key1<-1
+    key1<-NULL
+    
+    key2<-0
+    key2<-1
+    key2<-NULL
+  }
+}
 
-
+#activate prompt
+interactive_prompt()
 
