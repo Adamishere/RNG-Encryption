@@ -98,7 +98,7 @@ interactive_prompt<-function(){
     key2<-0
     key2<-1
     key2<-NULL
-  }  else if(gate1=="d"|gate1=='d'){
+  }  else if(gate1=="D"|gate1=='d'){
     
     coded.text0<-readline("Enter text you wish to decrypt (space delimited):")
     coded.text<-as.numeric(unlist(strsplit(tolower(coded.text0),' ')))
