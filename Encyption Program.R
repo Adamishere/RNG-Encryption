@@ -19,47 +19,59 @@ converter2<-function(x){
 }
 
 #Encypter:
-#Takes two arguments
+#Takes three arguments
 #   plain.text - which is a string text you wish to encrypt
 #   Key1 - A numeric seed that will serve as your code, accepts numeric values, max 10 digits
 #   Key2 - A numeric seed that will serve as your code, accepts numeric values, max 10 digits
+#   Max  - A numeric seed that will obscure the rare upper/lower limit of message and cypher
 
-encrypter<-function(plain.text,key1,key2){
+encrypter<-function(plain.text,key1,key2,max){
   
   #input
   message<-unlist(strsplit(tolower(plain.text),''))
   n<-length(message)
   message1<-as.data.frame(message,stringsAsFactors = FALSE)
   message1$message
-
+  
+  #Modifies cypher's upper/lower bound, hiding bounds that may be apparent 
+  #through min/max random number and min/max coded number
+  set.seed(max)
+  m_bound<-runif(1,50,200)
+  
   #creates new list of numbers
   raw.text<-unlist(lapply((message1$message),converter))
   set.seed(key1)
-  cypher1<-round(runif(n,1,100))
+  cypher1<-round(runif(n,1+m_bound,100+m_bound))
   set.seed(key2)
-  cypher2<-round(runif(n,1,100))
+  cypher2<-round(runif(n,1+m_bound,100+m_bound))
   
   encrypted.text<-raw.text+cypher1+cypher2
   return((encrypted.text))
 }
 
 #Decypter:
-#Takes two arguments
+#Takes three arguments
 #   coded.text - Numeric list of the coded text
 #   Key1 - A numeric seed that will serve as your code, accepts numeric values, max 10 digits
 #   Key2 - A numeric seed that will serve as your code, accepts numeric values, max 10 digits
-
-decrypter<-function(coded.text,key1,key2){
+#   Max  - A numeric seed that will obscure the rare upper/lower limit of message and cypher
+decrypter<-function(coded.text,key1,key2,max){
   
   message<-as.data.frame(coded.text)
+  
+  #Modifies cypher's upper/lower bound, hiding bounds that may be apparent 
+  #through min/max random number and min/max coded number
+  set.seed(max)
+  m_bound<-runif(1,50,200)
+  
   n<-nrow(message)
   set.seed(key1)
-  cypher1<-as.data.frame(round(runif(n,1,100)))
+  cypher1<-as.data.frame(round(runif(n,1+m_bound,100+m_bound)))
   set.seed(key2)
-  cypher2<-as.data.frame(round(runif(n,1,100)))
+  cypher2<-as.data.frame(round(runif(n,1+m_bound,100+m_bound)))
   
   plain.num<- message-cypher1-cypher2
-
+  
   #creates new list of numbers
   plain.text<-unlist(lapply((plain.num$coded.text),converter2))
   
@@ -67,62 +79,41 @@ decrypter<-function(coded.text,key1,key2){
   return(paste(as.character(plain.text),collapse=''))
 }
 
+runif(5,1,100)
 
 #Example "Hello World' encryption
-coded.text<-encrypter("This is a coded message!",0123456789,0123456789)
+coded.text<-encrypter("This is a coded message!",0123456789,0123456789,4)
 coded.text
 
-plain.text<-decrypter(coded.text, 0123456789,0123456789)
+plain.text<-decrypter(coded.text,0123456789,0123456789,4)
 plain.text
 
 #Interactive encryption/decryption prompts
-#No stored vars
+
 interactive_prompt<-function(){
   gate1<-readline("[E]ncrypt or [D]ecrypt?:")
   
   if(gate1=="E"|gate1=='e'){
-  
+    
     plain.text<-readline("Enter text you wish to encrypt:")
     key1<-readline("Enter encyption key1:")
     key2<-readline("Enter encyption key2:")
-    print(encrypter(plain.text,key1,key2))
-    
-    plain.text<-0
-    plain.text<-1
-    plain.text<-NULL
-    
-    key1<-0
-    key1<-1
-    key1<-NULL
-    
-    key2<-0
-    key2<-1
-    key2<-NULL
+    max <-readline("Enter encyption key3:")
+    print(encrypter(plain.text,key1,key2,max))
+
   }  else if(gate1=="D"|gate1=='d'){
     
     coded.text0<-readline("Enter text you wish to decrypt (space delimited):")
     coded.text<-as.numeric(unlist(strsplit(tolower(coded.text0),' ')))
     key1<-readline("Enter encyption key1:")
     key2<-readline("Enter encyption key2:")
-    print(decrypter(coded.text,key1,key2))
-    coded.text0<-0
-    coded.text0<-1
-    coded.text0<-NULL
-    
-    coded.text<-0
-    coded.text<-1
-    coded.text<-NULL
-    
-    key1<-0
-    key1<-1
-    key1<-NULL
-    
-    key2<-0
-    key2<-1
-    key2<-NULL
+    max <-readline("Enter encyption key3:")
+    print(decrypter(coded.text,key1,key2,max))
+
   }
 }
 
 #activate prompt
 interactive_prompt()
+
 
