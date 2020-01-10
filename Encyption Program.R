@@ -2,8 +2,13 @@
 
 #initialize tables and functions
 #alpha-numeric table
-num<-as.data.frame(1:41)
-let<-as.data.frame(c(as.character(letters),' ','.',"'",'!','?','1','2','3','4','5','6','7','8','9','0'))
+let<-as.data.frame(c(toupper(as.character(letters)),
+                     as.character(letters),
+                     "'",' ','.','!','@','#','$','%','^','&','*','(',')',
+                     '_','+','~','[',']','{','}','-','=',';','<','>','?',':','|',
+                     '1','2','3','4','5','6','7','8','9','0'))
+
+num<-as.data.frame(1:nrow(let))
 rot0<-cbind(let,num)
 names(rot0)<-c('let','num')
 
@@ -18,102 +23,137 @@ converter2<-function(x){
   return(z)
 }
 
+
+#Generate key stream based on seed and length of message
+#  seed - numeric - serves as part of password
+#  n - numeric - length of message. Produces a key stream just as long
+keystreamrng<- function(seed,n){
+  set.seed(seed)
+  keystream<-round(runif(n,1,100))
+  return(keystream)
+}
+
 #Encypter:
 #Takes three arguments
-#   plain.text - which is a string text you wish to encrypt
-#   Key1 - A numeric seed that will serve as your code, accepts numeric values, max 10 digits
-#   Key2 - A numeric seed that will serve as your code, accepts numeric values, max 10 digits
-#   Max  - A numeric seed that will obscure the rare upper/lower limit of message and cypher
+#   plain.text - string - which is a string text you wish to encrypt
+#   password - string - Password to generate keystream
+#   pin - numeric - 10 digits, additional key, default 1
+plain.text<-"hh"
+password<-"z"
+pin<-1
 
-encrypter<-function(plain.text,key1,key2,max){
+encrypter<-function(plain.text,password, pin=1){
+  #parse password
+  pwd<-unlist(strsplit(password, split=""))
+  pwd_num<-unlist(lapply(pwd,converter))
+  pwd_num<-c(pwd_num,pin)
+  pwd_length<-length(pwd_num)
   
-  #input
+  #Convert text to dataframe
   message<-unlist(strsplit(tolower(plain.text),''))
   n<-length(message)
-  message1<-as.data.frame(message,stringsAsFactors = FALSE)
-  message1$message
+  msg.df<-as.data.frame(message,stringsAsFactors = FALSE)
+  msg.df$message
   
-  #Modifies cypher's upper/lower bound, hiding bounds that may be apparent 
-  #through min/max random number and min/max coded number
-  set.seed(max)
-  m_bound<-runif(1,50,200)
+  msg.df$num_message<-(sapply((msg.df$message),converter))
   
-  #creates new list of numbers
-  raw.text<-unlist(lapply((message1$message),converter))
-  set.seed(key1)
-  cypher1<-round(runif(n,1+m_bound,100+m_bound))
-  set.seed(key2)
-  cypher2<-round(runif(n,1+m_bound,100+m_bound))
+  #generate key stream for each character in password
+  keystream<-sapply(pwd_num,keystreamrng, n=n)
+  #Prevents cbind from transposing a single row
+  if(n==1){
+    keystream<-t(as.data.frame(keystream))
+  }
+  #attach to message dataframe
+  msg.df<-cbind(msg.df,keystream)
+
+  #Combined all keystreams and message
+  msg.df$raw_coded<-rowSums(msg.df[,2:(2+pwd_length)])
   
-  encrypted.text<-raw.text+cypher1+cypher2
-  return((encrypted.text))
+  #Code back to original possible values
+  mod.num<-unlist(msg.df$raw_coded%%nrow(rot0))
+  mod.num
+  return(mod.num)
 }
 
 #Decypter:
 #Takes three arguments
 #   coded.text - Numeric list of the coded text
-#   Key1 - A numeric seed that will serve as your code, accepts numeric values, max 10 digits
-#   Key2 - A numeric seed that will serve as your code, accepts numeric values, max 10 digits
-#   Max  - A numeric seed that will obscure the rare upper/lower limit of message and cypher
-decrypter<-function(coded.text,key1,key2,max){
+#   password - string - password to decode message
+#   pin - numeric - 10 digits, additional key, default 1
+
+decrypter<-function(coded.text, password, pin=1){
   
+  #parse password
+  pwd<-unlist(strsplit(password, split=""))
+  pwd_num<-unlist(lapply(pwd,converter))
+  pwd_num<-c(pwd_num,pin)
+  pwd_length<-length(pwd_num)
+  
+  #parse coded text as df
   message<-as.data.frame(coded.text)
-  
-  #Modifies cypher's upper/lower bound, hiding bounds that may be apparent 
-  #through min/max random number and min/max coded number
-  set.seed(max)
-  m_bound<-runif(1,50,200)
-  
   n<-nrow(message)
-  set.seed(key1)
-  cypher1<-as.data.frame(round(runif(n,1+m_bound,100+m_bound)))
-  set.seed(key2)
-  cypher2<-as.data.frame(round(runif(n,1+m_bound,100+m_bound)))
   
-  plain.num<- message-cypher1-cypher2
+  #generate keystream
+  keystream<-sapply(pwd_num,keystreamrng, n=n)
   
-  #creates new list of numbers
-  plain.text<-unlist(lapply((plain.num$coded.text),converter2))
+  #Prevents cbind from transposing a single row
+  if(n==1){
+    keystream<-t(as.data.frame(keystream))
+  }
   
-  #output
-  return(paste(as.character(plain.text),collapse=''))
+  #merge key onto message frame
+  message1<-cbind(message,keystream)
+  
+  message1$raw_uncoded<-message1$coded.text - rowSums(message1[,2:(1+pwd_length)])
+  
+  decoded.num<-unlist(message1$raw_uncoded%%nrow(rot0))
+  decoded.rawtxt<-sapply(decoded.num,converter2)
+    
+  decoded.text<-paste(as.character(decoded.rawtxt),collapse='')
+  return(decoded.text)
 }
 
-runif(5,1,100)
-
 #Example "Hello World' encryption
-coded.text<-encrypter("This is a coded message!",0123456789,0123456789,4)
+
+coded.text<-encrypter("The max pin 999999999","z",999999999)
 coded.text
 
-plain.text<-decrypter(coded.text,0123456789,0123456789,4)
+plain.text<-decrypter(coded.text,"z",999999999)
 plain.text
 
-#Interactive encryption/decryption prompts
 
+#Interactive encryption/decryption prompts
 interactive_prompt<-function(){
   gate1<-readline("[E]ncrypt or [D]ecrypt?:")
   
   if(gate1=="E"|gate1=='e'){
     
     plain.text<-readline("Enter text you wish to encrypt:")
-    key1<-readline("Enter encyption key1:")
-    key2<-readline("Enter encyption key2:")
-    max <-readline("Enter encyption key3:")
-    print(encrypter(plain.text,key1,key2,max))
+    pass<-readline("Enter password:")
+    pin<-readline("Enter pin (optional):")
+    
+    if(pin==""){pin<-1}
+    
+    print(encrypter(plain.text,pass,pin))
 
   }  else if(gate1=="D"|gate1=='d'){
     
     coded.text0<-readline("Enter text you wish to decrypt (space delimited):")
     coded.text<-as.numeric(unlist(strsplit(tolower(coded.text0),' ')))
-    key1<-readline("Enter encyption key1:")
-    key2<-readline("Enter encyption key2:")
-    max <-readline("Enter encyption key3:")
-    print(decrypter(coded.text,key1,key2,max))
+    
+    pass<-readline("Enter password:")
+    pin<-readline("Enter pin (optional):")
+    
+    if(pin==""){pin<-1}
+    
+    print(decrypter(coded.text,pass,pin))
 
   }
 }
 
+
 #activate prompt
 interactive_prompt()
 
-
+print(encrypter("zz","z",21))
+print(decrypter("58 85","z",21))
